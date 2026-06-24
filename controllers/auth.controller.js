@@ -41,12 +41,23 @@ exports.register = async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      email,
-      passwordHash,
-      role: ['user', 'commerce'].includes(role) ? role : 'user',
-      privacyAccepted: true,
-      privacyAcceptedAt: new Date()
-    });
+    email,
+    passwordHash,
+    role: ['user', 'commerce'].includes(role) ? role : 'user',
+    privacyAccepted: true,
+    privacyAcceptedAt: new Date()
+  });
+
+    // Enviar correo de bienvenida
+    await sendMail(
+    user.email,
+    'Bienvenido a Conecta Alimentos',
+    `
+    <h2>Bienvenido a Conecta Alimentos</h2>
+    <p>Tu cuenta fue creada correctamente.</p>
+    <p>Ya puedes iniciar sesión en la plataforma.</p>
+    `
+    );
 
     // No devolver passwordHash
     return res.status(201).json({
