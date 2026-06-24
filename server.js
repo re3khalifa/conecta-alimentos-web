@@ -56,10 +56,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/.well-known/security.txt', (req, res) => {
   res.sendFile(
-    path.join(__dirname, 'public', '.well-known', 'security.txt')
+    path.join(__dirname, 'public', 'security.txt')
   );
 });
- 
 // ── Vistas ───────────────────────────────────────────────────────────────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
