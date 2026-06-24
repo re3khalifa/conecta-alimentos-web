@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>Panel Comercio | Conecta Alimentos</title>
+  <style>
+    .stats { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 28px; }
+    .stat { padding: 18px 20px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-soft); }
+    .stat .kpi { font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+    .stat .lbl { font-size: 13px; color: var(--muted); }
+    .kpi.green  { color: var(--ok); }
+    .kpi.yellow { color: var(--warn); }
+    .kpi.red    { color: var(--danger); }
+    .kpi.gray   { color: var(--muted); }
+
+    .accesos { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 28px; }
+    .acceso-card { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-soft); text-decoration: none; color: var(--text); transition: box-shadow .15s; }
+    .acceso-card:hover { box-shadow: var(--shadow); }
+    .acceso-card h3 { font-size: 16px; margin: 0; }
+    .acceso-card p  { font-size: 13px; color: var(--muted); margin: 0; }
+
+    .section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+
+    .recientes-lista { display: flex; flex-direction: column; gap: 8px; }
+    .reciente-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); flex-wrap: wrap; }
+    .reciente-titulo { font-size: 14px; font-weight: 600; flex: 1; min-width: 120px; }
+    .reciente-meta   { font-size: 12px; color: var(--muted); }
+    .reciente-acciones { display: flex; gap: 8px; }
+
+    .skeleton { background: var(--surface-2); border-radius: 8px; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .sk-kpi { height: 36px; width: 60px; margin-bottom: 6px; }
+    .sk-lbl { height: 14px; width: 100px; }
+    .sk-row { height: 52px; border-radius: var(--radius-sm); margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+  <%- include('../layout/header', { title: 'Panel Comercio' }) %>
+
+  <nav class="breadcrumb container">
+    <a href="/">Inicio</a> / <span>Panel Comercio</span>
+  </nav>
+
+  <main class="container section">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+      <div>
+        <h1 class="page-title">Panel del comercio</h1>
+        <p class="page-subtitle">Bienvenido, <strong><%= locals.user ? locals.user.email : '' %></strong></p>
+      </div>
+      <a class="btn" href="/commerce/new-offer">+ Nueva oferta</a>
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="stats" id="statsContainer">
+      <div class="stat"><div class="skeleton sk-kpi"></div><div class="skeleton sk-lbl"></div></div>
+      <div class="stat"><div class="skeleton sk-kpi"></div><div class="skeleton sk-lbl"></div></div>
+      <div class="stat"><div class="skeleton sk-kpi"></div><div class="skeleton sk-lbl"></div></div>
+      <div class="stat"><div class="skeleton sk-kpi"></div><div class="skeleton sk-lbl"></div></div>
+    </div>
+
+    <!-- ACCESOS RÁPIDOS -->
+    <p class="section-title">Accesos rápidos</p>
+    <div class="accesos">
+      <a class="acceso-card" href="/commerce/offers">
+        <h3>Mis ofertas</h3>
+        <p>Ver, editar y eliminar todas tus ofertas publicadas.</p>
+      </a>
+      <a class="acceso-card" href="/commerce/new-offer">
+        <h3>Nueva oferta</h3>
+        <p>Publicar excedentes o productos próximos a vencer.</p>
+      </a>
+    </div>
+
+    <!-- OFERTAS RECIENTES -->
+    <p class="section-title">Últimas ofertas publicadas</p>
+    <div id="recientesContainer">
+      <div class="skeleton sk-row"></div>
+      <div class="skeleton sk-row"></div>
+      <div class="skeleton sk-row"></div>
+    </div>
+
+  </main>
+
+  <%- include('../layout/footer') %>
+
+  <script>
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/commerce/stats');
+
+        if (res.status === 401) {
+          window.location.href = '/auth/login';
+          return;
+        }
+
+        const data = await res.json();
+
+        // ── Estadísticas ─────────────────────────────────────────────────────
+        document.getElementById('statsContainer').innerHTML = `
+          <div class="stat">
+            <div class="kpi green">${data.total}</div>
+            <div class="lbl">Total de ofertas</div>
+          </div>
+          <div class="stat">
+            <div class="kpi green">${data.activas}</div>
+            <div class="lbl">Ofertas activas</div>
+          </div>
+          <div class="stat">
+            <div class="kpi yellow">${data.porVencer}</div>
+            <div class="lbl">Por vencer (3 días)</div>
+          </div>
+          <div class="stat">
+            <div class="kpi red">${data.vencidas}</div>
+            <div class="lbl">Vencidas</div>
+          </div>
+        `;
+
+        // ── Recientes ────────────────────────────────────────────────────────
+        const container = document.getElementById('recientesContainer');
+
+        if (!data.recientes.length) {
+          container.innerHTML = `<p class="muted" style="padding:16px 0;">No tienes ofertas publicadas aún.</p>`;
+          return;
+        }
+
+        container.innerHTML = `<div class="recientes-lista">
+          ${data.recientes.map(o => {
+            const fecha = o.expirationDate
+              ? new Date(o.expirationDate).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' })
+              : 'Sin fecha';
+            const isExpired = o.expirationDate && new Date(o.expirationDate) < new Date();
+            const badge = isExpired
+              ? '<span class="badge warn" style="font-size:11px;">Vencida</span>'
+              : '<span class="badge ok"  style="font-size:11px;">Activa</span>';
+            return `
+              <div class="reciente-row">
+                <span class="reciente-titulo">${escapeHtml(o.title)}</span>
+                <span class="reciente-meta">Caduca: ${fecha}</span>
+                ${badge}
+                <div class="reciente-acciones">
+                  <a class="btn btn-outline btn-small" href="/commerce/edit-offer/${o._id}">Editar</a>
+                  <a class="btn btn-small" href="/ofertas/${o._id}">Ver</a>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>`;
+
+      } catch (err) {
+        console.error('Error cargando dashboard:', err);
+        document.getElementById('statsContainer').innerHTML =
+          '<p class="muted">Error al cargar estadísticas.</p>';
+      }
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(str));
+      return d.innerHTML;
+    }
+
+    loadDashboard();
+  </script>
+
+</body>
+</html>

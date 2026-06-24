@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <title>Inicio</title>
+  </head>
+  <body>
+    <%- include('layout/header', { title: 'Inicio' }) %>
+
+<nav class="breadcrumb container">
+  <a href="/">Inicio</a> / <span>Inicio</span>
+</nav>
+
+<main class="container section">
+  <section class="hero">
+    <h2>Reduce el desperdicio de alimentos</h2>
+    <p>Conecta comercios con personas para aprovechar excedentes a buen precio.</p>
+    <a href="/ofertas" class="btn">Ver ofertas</a>
+  </section>
+
+  <section class="section">
+    <h2 class="page-title">¿Cómo funciona?</h2>
+    <p class="page-subtitle">Un flujo simple para beneficiar a todos.</p>
+
+    <div class="grid cards">
+      <article class="card">
+        <h3>1) Comercios publican</h3>
+        <p class="muted">Suben ofertas con excedentes y vigencia.</p>
+      </article>
+      <article class="card">
+        <h3>2) Usuarios encuentran</h3>
+        <p class="muted">Buscan por alimento o comercio cercano.</p>
+      </article>
+      <article class="card">
+        <h3>3) Se aprovecha</h3>
+        <p class="muted">Menos desperdicio, más impacto.</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<%- include('layout/footer') %>
+
+  </body>
+</html>

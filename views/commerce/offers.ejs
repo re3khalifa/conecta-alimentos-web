@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>Mis ofertas</title>
+  <style>
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .25s ease, transform .25s ease;
+      z-index: 999;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.ok   { background: var(--ok); }
+    .toast.err  { background: var(--danger); }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--muted);
+    }
+    .empty-state p { margin-bottom: 16px; font-size: 16px; }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, .35);
+    }
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, .08);
+      filter: none;
+    }
+    .btn-danger:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .loading-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--muted);
+    }
+
+    .offers-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <%- include('../layout/header', { title: 'Comercio - Mis Ofertas' }) %>
+
+  <nav class="breadcrumb container">
+    <a href="/">Inicio</a> / <a href="/commerce">Panel Comercio</a> / <span>Mis ofertas</span>
+  </nav>
+
+  <main class="container section">
+
+    <div class="offers-header">
+      <div>
+        <h1 class="page-title">Mis ofertas</h1>
+        <p class="page-subtitle">Ofertas registradas en tu comercio.</p>
+      </div>
+      <a class="btn" href="/commerce/new-offer">+ Nueva oferta</a>
+    </div>
+
+    <div id="offersContainer" class="grid cards">
+      <div class="loading-state">Cargando ofertas...</div>
+    </div>
+
+  </main>
+
+  <%- include('../layout/footer') %>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── Utilidad: toast de feedback (reemplaza alert()) ──────────────────────
+    function showToast(msg, type = 'ok') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    // ── Cargar ofertas del usuario autenticado ───────────────────────────────
+    async function loadOffers() {
+      const container = document.getElementById('offersContainer');
+
+      try {
+        const res = await fetch('/api/ofertas/mine');
+
+        if (res.status === 401) {
+          window.location.href = '/auth/login';
+          return;
+        }
+
+        if (!res.ok) {
+          container.innerHTML = '<div class="empty-state"><p>Error al cargar las ofertas.</p></div>';
+          return;
+        }
+
+        const offers = await res.json();
+        container.innerHTML = '';
+
+        if (!offers.length) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <p>No tienes ofertas registradas aún.</p>
+              <a class="btn" href="/commerce/new-offer">Crear primera oferta</a>
+            </div>`;
+          return;
+        }
+
+        offers.forEach(offer => renderCard(offer, container));
+
+      } catch (err) {
+        console.error('Error cargando ofertas:', err);
+        container.innerHTML = '<div class="empty-state"><p>Error de conexión. Intenta recargar la página.</p></div>';
+      }
+    }
+
+    // ── Renderizar una card de oferta ────────────────────────────────────────
+    function renderCard(offer, container) {
+      const isExpired = offer.expirationDate
+        ? new Date(offer.expirationDate) < new Date()
+        : false;
+
+      const badgeHTML = isExpired
+        ? '<span class="badge warn">Vencida</span>'
+        : '<span class="badge ok">Activa</span>';
+
+      const fechaExpiracion = offer.expirationDate
+        ? new Date(offer.expirationDate).toLocaleDateString('es-MX', {
+            day: '2-digit', month: 'short', year: 'numeric'
+          })
+        : 'Sin fecha';
+
+      const precioHTML = offer.price != null
+        ? `<strong>$${Number(offer.price).toFixed(2)}</strong>`
+        : '';
+
+      const article = document.createElement('article');
+      article.className = 'card';
+      article.dataset.id = offer._id;
+
+      article.innerHTML = `
+        ${badgeHTML}
+        <h3 style="margin: 8px 0 4px;">${escapeHtml(offer.title)}</h3>
+        <p class="card-meta">Caduca: ${fechaExpiracion} ${precioHTML ? '· ' + precioHTML : ''}</p>
+        <p style="font-size:14px; color:var(--muted);">${escapeHtml(offer.description || '')}</p>
+        <p class="muted">
+        Total: <b>${offer.quantity}</b> • 
+        Reservadas: <b>${offer.reservedCount}</b> • 
+        Disponibles: <b>${offer .available}</b>
+        </p>
+        <div class="card-actions">
+          <a class="btn btn-small btn-outline" href="/ofertas/${offer._id}">Ver</a>
+          <a class="btn btn-small btn-outline" href="/commerce/edit-offer/${offer._id}">Editar</a>
+          <button
+            class="btn btn-small btn-danger"
+            onclick="deleteOffer('${offer._id}', this)"
+          >Eliminar</button>
+        </div>`;
+
+      container.appendChild(article);
+    }
+
+    // ── Eliminar oferta ──────────────────────────────────────────────────────
+    async function deleteOffer(id, btn) {
+      if (!confirm('¿Seguro que quieres eliminar esta oferta?')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Eliminando…';
+
+      try {
+        const res = await fetch(`/api/ofertas/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (res.ok) {
+          // Eliminar la card del DOM sin recargar todo
+          const card = btn.closest('article[data-id]');
+          if (card) card.remove();
+
+          // Si ya no quedan cards, mostrar estado vacío
+          const container = document.getElementById('offersContainer');
+          if (!container.querySelector('article')) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <p>No tienes ofertas registradas aún.</p>
+                <a class="btn" href="/commerce/new-offer">Crear primera oferta</a>
+              </div>`;
+          }
+
+          showToast('Oferta eliminada correctamente');
+        } else {
+          showToast(data.message || 'Error al eliminar', 'err');
+          btn.disabled = false;
+          btn.textContent = 'Eliminar';
+        }
+      } catch (err) {
+        console.error('Error eliminando oferta:', err);
+        showToast('Error de conexión', 'err');
+        btn.disabled = false;
+        btn.textContent = 'Eliminar';
+      }
+    }
+
+    // ── Sanitizar texto para evitar XSS al insertar en el DOM ───────────────
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    // ── Iniciar ──────────────────────────────────────────────────────────────
+    loadOffers();
+  </script>
+
+</body>
+</html>

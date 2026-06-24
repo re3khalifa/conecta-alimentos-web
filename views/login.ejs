@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <title>Iniciar Sesión</title>
+  </head>
+  <body>
+    <%- include('layout/header', { title: 'Login' }) %>
+
+    <nav class="breadcrumb container">
+      <a href="/">Inicio</a> / <span>Login</span>
+    </nav>
+
+    <main class="container section">
+      <section class="form-container">
+        <div class="form-card">
+          <h2 class="page-title">Iniciar sesión</h2>
+          <p class="page-subtitle">Accede para administrar tu cuenta.</p>
+
+          <form id="loginForm" novalidate>
+            <label>Email</label>
+            <input id="email" type="email" placeholder="correo@ejemplo.com" required />
+
+            <label>Contraseña</label>
+            <input id="password" type="password" placeholder="••••••••" required />
+
+            <p class="text-center mt-3">
+            <a href="/auth/forgot-password">
+            ¿Olvidaste tu contraseña?
+            </a>
+            </p>
+
+            <p id="formMsg" class="form-msg" style="margin-top:10px; color:red; min-height:20px;"></p>
+
+            <button class="btn" type="submit" id="submitBtn">Entrar</button>
+            <a class="btn btn-outline" href="/auth/register">Crear cuenta</a>
+          </form>
+          <script src="/js/login.js"></script>
+        </div>
+      </section>
+    </main>
+
+    <%- include('layout/footer') %>
+
+  </body>
+</html>

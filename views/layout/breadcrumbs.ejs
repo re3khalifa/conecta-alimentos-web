@@ -1,0 +1,14 @@
+<nav class="breadcrumbs">
+  <a href="/">Inicio</a> >
+  <% breadcrumbs.forEach((b, i)=> { %>
+    <% if (i===breadcrumbs.length - 1) { %>
+      <span>
+        <%= b.name %>
+      </span>
+      <% } else { %>
+        <a href="<%= b.url %>">
+          <%= b.name %>
+        </a> >
+        <% } %>
+          <% }) %>
+</nav>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>ODS</title>
+  </head>
+  <body>
+    <%- include('layout/header', { title: 'Impacto ODS' }) %>
+
+<nav class="breadcrumb container">
+  <a href="/">Inicio</a> / <span>ODS</span>
+</nav>
+
+<main class="container section">
+  <h1 class="page-title">Impacto en ODS</h1>
+  <p class="page-subtitle">Este módulo explica cómo tu plataforma reduce desperdicio y apoya comunidad.</p>
+
+  <div class="grid cards">
+    <article class="card">
+      <h3>ODS 12 — Producción y consumo responsable</h3>
+      <p class="muted">Reducimos desperdicio conectando excedentes con usuarios.</p>
+      <span class="badge ok">Principal</span>
+    </article>
+
+    <article class="card">
+      <h3>ODS 2 — Hambre cero</h3>
+      <p class="muted">Mejor aprovechamiento de alimentos a menor costo.</p>
+      <span class="badge warn">Secundario</span>
+    </article>
+
+    <article class="card">
+      <h3>ODS 13 — Acción por el clima</h3>
+      <p class="muted">Menos desperdicio = menos emisiones asociadas.</p>
+      <span class="badge ok">Apoyo</span>
+    </article>
+  </div>
+</main>
+
+<%- include('layout/footer') %>
+
+  </body>
+

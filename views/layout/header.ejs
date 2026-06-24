@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      <%= (typeof title !== 'undefined' ? title + ' | ' : '') %>Conecta Alimentos
+    </title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="header">
+      <nav class="nav container">
+
+        <a class="logo" href="/">Conecta Alimentos</a>
+
+        <ul class="menu">
+          <li><a href="/">Inicio</a></li>
+          <li><a href="/ofertas">Ofertas</a></li>
+          <li><a href="/impacto-ods">ODS</a></li>
+
+          <% if (user) { %>
+
+            <li>
+              <%if (user.role === 'commerce') { %>
+                <a href="/commerce">Panel Comercio</a>
+              <% } else { %>
+                <a href="/user">Mi Panel</a>
+              <% } %>
+            </li>
+
+            <li>
+              <span style="
+                font-size: 13px;
+                color: var(--muted);
+                padding: 9px 4px;
+                display: inline-flex;
+                align-items: center;
+              ">
+                <%= user.email %>
+              </span>
+            </li>
+
+            <li>
+              <button
+                id="logoutBtn"
+                class="btn btn-outline btn-small"
+                style="font-size:13px;"
+              >
+                Cerrar sesión
+              </button>
+            </li>
+
+          <% } else { %>
+
+            <li><a href="/auth/login">Login</a></li>
+            <li><a href="/auth/register">Registro</a></li>
+
+          <% } %>
+
+        </ul>
+
+      </nav>
+    </header>
+
+    <% if (user) { %>
+  <script src="/js/logout.js"></script>
+    <% } %>

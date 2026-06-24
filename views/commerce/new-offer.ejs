@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <title><%= editMode ? 'Editar oferta' : 'Nueva oferta' %> | Conecta Alimentos</title>
+</head>
+<body>
+
+  <%- include('../layout/header', { title: editMode ? 'Editar oferta' : 'Nueva oferta' }) %>
+
+  <nav class="breadcrumb container">
+    <a href="/">Inicio</a> / <a href="/commerce">Panel Comercio</a> /
+    <span><%= editMode ? 'Editar oferta' : 'Nueva oferta' %></span>
+  </nav>
+
+  <main class="container section">
+    <h1 class="page-title"><%= editMode ? 'Editar oferta' : 'Nueva oferta' %></h1>
+    <p class="page-subtitle"><%= editMode ? 'Modifica los datos de tu oferta.' : 'Publica una nueva oferta para tu comercio.' %></p>
+
+    <section class="form-container">
+      <div class="form-card">
+        <form id="offerForm">
+
+          <label>Título</label>
+          <input id="title" type="text" placeholder="Ej. Pan integral del día" required />
+
+          <label>Categoría</label>
+          <select id="category" required>
+            <option value="">Selecciona…</option>
+            <option value="Panadería">Panadería</option>
+            <option value="Frutas">Frutas</option>
+            <option value="Comida">Comida</option>
+            <option value="Bebidas">Bebidas</option>
+            <option value="Lácteos">Lácteos</option>
+            <option value="Verduras">Verduras</option>
+            <option value="Otro">Otro</option>
+          </select>
+
+          <label>Descripción</label>
+          <textarea id="description" rows="3" placeholder="Describe brevemente la oferta…"></textarea>
+
+          <label>Precio ($)</label>
+          <input id="price" type="number" min="0" step="0.01" placeholder="0.00" />
+
+          <label>Cantidad disponible</label>
+          <input id="quantity" type="number" min="1" placeholder="Ej. 10" />
+
+          <label>Fecha de caducidad</label>
+          <input id="expirationDate" type="date" required />
+
+          <label>Dirección</label>
+          <input id="address" type="text" placeholder="Ej. Calle + Número + Colonia + Ciudad + México" autocomplete="off" />
+
+          <!-- Coordenadas ocultas — se llenan automáticamente al escribir la dirección -->
+          <input type="hidden" id="lat" />
+          <input type="hidden" id="lng" />
+
+          <!-- Preview del mapa -->
+          <div id="mapPreview" style="display:none; margin-top: 8px; border-radius: 12px; overflow: hidden; height: 200px;">
+            <iframe id="mapFrame" width="100%" height="200" frameborder="0" style="border:0;" allowfullscreen></iframe>
+          </div>
+          <p id="geoMsg" style="font-size: 12px; color: var(--muted); margin-top: 4px; min-height: 16px;"></p>
+
+          <p id="formMsg" style="color: red; font-size: 13px; min-height: 18px;"></p>
+
+          <button class="btn" type="submit" id="submitBtn">
+            <%= editMode ? 'Guardar cambios' : 'Publicar oferta' %>
+          </button>
+          <a class="btn btn-outline" href="/commerce/offers">Cancelar</a>
+
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <%- include('../layout/footer') %>
+
+  <script>
+    const editMode = <%= editMode ? 'true' : 'false' %>;
+    const offerId  = '<%= offerId || "" %>';
+
+    // ── Geocoding con Nominatim (OpenStreetMap, sin API key) ──────────────────
+    let geoTimer = null;
+
+    document.getElementById('address').addEventListener('input', () => {
+      clearTimeout(geoTimer);
+      const val = document.getElementById('address').value.trim();
+
+      // Limpiar coords si borra la dirección
+      if (!val) {
+        document.getElementById('lat').value = '';
+        document.getElementById('lng').value = '';
+        document.getElementById('mapPreview').style.display = 'none';
+        document.getElementById('geoMsg').textContent = '';
+        return;
+      }
+
+      document.getElementById('geoMsg').textContent = 'Buscando ubicación…';
+
+      // Esperar 800ms después de que el usuario deje de escribir
+      geoTimer = setTimeout(() => geocode(val), 800);
+    });
+
+    async function geocode(address) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=mx`;
+        const res  = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+        const data = await res.json();
+
+        if (!data.length) {
+          document.getElementById('geoMsg').textContent = '⚠️ No se encontró la dirección. El mapa no se mostrará.';
+          document.getElementById('lat').value = '';
+          document.getElementById('lng').value = '';
+          document.getElementById('mapPreview').style.display = 'none';
+          return;
+        }
+
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+
+        document.getElementById('lat').value = lat;
+        document.getElementById('lng').value = lng;
+        document.getElementById('geoMsg').textContent = `✅ Ubicación encontrada: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+        // Mostrar preview del mapa
+        const q = `${lat},${lng}`;
+        document.getElementById('mapFrame').src =
+          `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+        document.getElementById('mapPreview').style.display = 'block';
+
+      } catch (err) {
+        document.getElementById('geoMsg').textContent = 'No se pudo obtener la ubicación.';
+      }
+    }
+
+    // ── Modo edición: cargar datos existentes ─────────────────────────────────
+    if (editMode && offerId) {
+      fetch(`/api/ofertas/${offerId}`)
+        .then(r => r.json())
+        .then(offer => {
+          document.getElementById('title').value       = offer.title        || '';
+          document.getElementById('category').value    = offer.category     || '';
+          document.getElementById('description').value = offer.description  || '';
+          document.getElementById('price').value       = offer.price        != null ? offer.price : '';
+          document.getElementById('quantity').value    = offer.quantity     != null ? offer.quantity : '';
+          document.getElementById('address').value     = offer.address      || '';
+
+          if (offer.expirationDate) {
+            document.getElementById('expirationDate').value =
+              new Date(offer.expirationDate).toISOString().split('T')[0];
+          }
+
+          // Si ya tiene coordenadas, cargarlas y mostrar el mapa
+          if (offer.location?.lat && offer.location?.lng) {
+            const lat = offer.location.lat;
+            const lng = offer.location.lng;
+            document.getElementById('lat').value = lat;
+            document.getElementById('lng').value = lng;
+            document.getElementById('geoMsg').textContent =
+              `✅ Ubicación: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            const q = `${lat},${lng}`;
+            document.getElementById('mapFrame').src =
+              `https://www.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+            document.getElementById('mapPreview').style.display = 'block';
+          }
+        })
+        .catch(() => {
+          document.getElementById('formMsg').textContent = 'Error al cargar los datos de la oferta.';
+        });
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+    document.getElementById('offerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const msg = document.getElementById('formMsg');
+      const btn = document.getElementById('submitBtn');
+      msg.textContent = '';
+      btn.disabled = true;
+      btn.textContent = editMode ? 'Guardando…' : 'Publicando…';
+
+      const latVal = parseFloat(document.getElementById('lat').value);
+      const lngVal = parseFloat(document.getElementById('lng').value);
+
+      const data = {
+        title:          document.getElementById('title').value.trim(),
+        category:       document.getElementById('category').value,
+        description:    document.getElementById('description').value.trim(),
+        price:          parseFloat(document.getElementById('price').value) || 0,
+        quantity:       parseInt(document.getElementById('quantity').value)  || 0,
+        expirationDate: document.getElementById('expirationDate').value,
+        address:        document.getElementById('address').value.trim(),
+        // Solo incluir location si se obtuvieron coordenadas válidas
+        ...((!isNaN(latVal) && !isNaN(lngVal)) && {
+          location: { lat: latVal, lng: lngVal }
+        }),
+      };
+
+      const url    = editMode ? `/api/ofertas/${offerId}` : '/api/ofertas';
+      const method = editMode ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          window.location.href = '/commerce/offers';
+        } else if (res.status === 401) {
+          window.location.href = '/auth/login';
+        } else {
+          msg.textContent = result.message || 'Error al guardar la oferta.';
+          btn.disabled = false;
+          btn.textContent = editMode ? 'Guardar cambios' : 'Publicar oferta';
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        msg.textContent = 'Error de conexión. Intenta de nuevo.';
+        btn.disabled = false;
+        btn.textContent = editMode ? 'Guardar cambios' : 'Publicar oferta';
+      }
+    });
+  </script>
+
+</body>
+</html>
