@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendMail } = require('../services/mail.service');
 
 const COOKIE_NAME = 'token';
 
