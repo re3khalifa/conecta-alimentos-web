@@ -54,6 +54,11 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/.well-known/security.txt', (req, res) => {
+  res.sendFile(
+    path.join(__dirname, 'public', '.well-known', 'security.txt')
+  );
+});
  
 // ── Vistas ───────────────────────────────────────────────────────────────────
 app.set('view engine', 'ejs');
