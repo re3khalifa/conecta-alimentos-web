@@ -49,15 +49,18 @@ exports.register = async (req, res, next) => {
   });
 
     // Enviar correo de bienvenida
+    try {
     await sendMail(
     user.email,
     'Bienvenido a Conecta Alimentos',
     `
-    <h2>Bienvenido a Conecta Alimentos</h2>
-    <p>Tu cuenta fue creada correctamente.</p>
-    <p>Ya puedes iniciar sesión en la plataforma.</p>
+      <h2>Bienvenido a Conecta Alimentos</h2>
+      <p>Tu cuenta fue creada correctamente.</p>
     `
     );
+  } catch (error) {
+  console.error('Error enviando correo:', error.message);
+}
 
     // No devolver passwordHash
     return res.status(201).json({
