@@ -31,7 +31,22 @@ if (!MONGO_URI) {
 }
  
 // ── Seguridad ────────────────────────────────────────────────────────────────
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", "https:", "data:"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"]
+      }
+    }
+  })
+);
 app.use(cors());
 app.use(cookieParser());
  
