@@ -87,6 +87,7 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/commerce', require('./routes/commerce.routes'));
 app.use("/api/reservas", require("./routes/reservation.routes"));
+app.use("/api/soap", require("./routes/soap.routes"));
  
 // ── 404 ──────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
