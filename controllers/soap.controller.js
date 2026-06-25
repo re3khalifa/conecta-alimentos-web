@@ -1,28 +1,34 @@
-exports.getOffersSOAP = (req, res) => {
+const Offer = require("../models/Offer");
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope
-xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+exports.getOffersSOAP = async (req, res, next) => {
+  try {
+
+    const offers = await Offer.find().lean();
+
+    let offersXML = "";
+
+    offers.forEach((offer) => {
+      offersXML += `
+        <Offer>
+          <Id>${offer._id}</Id>
+          <Title>${offer.title}</Title>
+          <Category>${offer.category}</Category>
+          <Price>${offer.price}</Price>
+          <Quantity>${offer.quantity}</Quantity>
+          <ExpirationDate>${offer.expirationDate}</ExpirationDate>
+        </Offer>
+      `;
+    });
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 
   <soap:Body>
 
     <GetOffersResponse>
 
-      <Offer>
-        <Id>1</Id>
-        <Title>Verduras frescas</Title>
-        <Category>Verduras</Category>
-        <Price>80</Price>
-        <Quantity>15</Quantity>
-      </Offer>
-
-      <Offer>
-        <Id>2</Id>
-        <Title>Pan del día</Title>
-        <Category>Panadería</Category>
-        <Price>30</Price>
-        <Quantity>10</Quantity>
-      </Offer>
+      ${offersXML}
 
     </GetOffersResponse>
 
@@ -30,8 +36,10 @@ xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 
 </soap:Envelope>`;
 
-  res.set("Content-Type", "text/xml");
+    res.set("Content-Type", "text/xml");
+    res.send(xml);
 
-  res.send(xml);
-
+  } catch (err) {
+    next(err);
+  }
 };
