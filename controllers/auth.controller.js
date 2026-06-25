@@ -51,7 +51,7 @@ exports.register = async (req, res, next) => {
     // Enviar correo de bienvenida
     try {
     await sendMail(
-    user.email,
+    "isaacmartinezmata006@gmail.com",
     'Bienvenido a Conecta Alimentos',
     `
       <h2>Bienvenido a Conecta Alimentos</h2>
